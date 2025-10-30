@@ -156,6 +156,20 @@ Common mistakes:
 - Mixing up x and y (input vs prediction). Use ŷ = w·x + b.
 - Forgetting to square errors (then + and − cancel out).
 
+Beginner mode: Regression & MSE — super simple
+- Goal: Draw a line that best guesses y from x.
+- Error for one point = actual − predicted. Squared makes big errors hurt more.
+- MSE = average of all squared errors. Smaller is better.
+
+Try it yourself (1 minute):
+- Data: (x,y) = (1,2), (2,3). Suppose line is ŷ = x + 0.
+- Predictions = [1,2] → errors = [1,1] → squares = [1,1] → MSE = 1.
+- If you move the line up by +1: ŷ = x + 1 → preds [2,3] → errors [0,0] → MSE = 0 (perfect for this toy set).
+
+Pitfalls to avoid:
+- Units matter. If x is in meters and y in dollars, rescale features if needed.
+- Outliers can dominate MSE. Consider robust losses (MAE/Huber) if needed.
+
 #### Gradient Descent
 - Iterative optimization: step opposite the gradient to reduce loss; key hyperparameter is learning rate α (too big overshoots; too small is slow).
 - Extends naturally to multiple features (higher-dimensional parameter space).
@@ -164,6 +178,14 @@ Analogy: You’re on a foggy hill. You feel the steepest downward direction and 
 Quick rules:
 - If loss jumps up and down wildly → step size is too big (reduce α).
 - If loss crawls slowly → α too small (increase a bit).
+
+Beginner mode: Gradient Descent — super simple
+- Imagine rolling a ball downhill on the loss surface.
+- Learning rate = step size. Too big: you bounce around; too small: you crawl.
+- Stop when steps don’t reduce loss anymore (or after a patience setting).
+
+Tiny demo thought experiment:
+- Start loss = 10. Take a step → loss 6. Another step → loss 4. Reduce α if the loss ever goes up; increase a bit if the loss barely changes for many steps.
 
 #### Classification with white-box models
 - Sigmoid maps scores to [0,1]; Logistic Regression = linear score + sigmoid for probabilistic classification.
@@ -178,6 +200,16 @@ Explain like I’m new:
 Tiny IG example:
 - Parent impurity = 0.8; after split, children impurities = 0.5 (weight 0.6) and 0.2 (weight 0.4).
 - Weighted child = 0.6×0.5 + 0.4×0.2 = 0.3 + 0.08 = 0.38; IG = 0.8 − 0.38 = 0.42 (good).
+
+Beginner mode: Logistic Regression — super simple
+- Think: score = w·x + b (a weighted sum). Probability = sigmoid(score) which squeezes any number into 0..1.
+- Decision: if p ≥ threshold (often 0.5), predict positive; else negative.
+- Tip: shift threshold to trade precision vs recall.
+
+Beginner mode: Decision Tree — super simple
+- Ask the question that best splits the data into purer groups (highest IG).
+- Repeat on each group until groups are pure enough or you hit stop rules.
+- Prune back if the tree gets too specific (overfit).
 
 Anchors: [Regression](#regression-basics-mse) • [Gradient Descent](#gradient-descent) • [Logistic Regression](#logistic-regression) • [Decision Trees](#decision-trees-id3c45-basics)
 
@@ -233,6 +265,12 @@ Input (4x4)                Filter (2x2)
 First output (top-left): 1*a + 2*b + 5*c + 6*d
 Slide right by 1 → use (2,3,6,7) → next output, etc.
 ```
+
+Beginner mode: CNN — super simple
+- Stride = how far the filter jumps each move (bigger stride → smaller output).
+- Padding = add zeros around the image edges so size doesn’t shrink too fast.
+- Pooling = summarize nearby values (max/avg) to make features more stable to small shifts.
+- Param count for conv: kernel_h×kernel_w×Cin×Cout + Cout (biases).
 
 Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-perceptron-and-mlp) • [Backprop](#backpropagation-essentials) • [CNN](#cnn-basics)
 
@@ -323,6 +361,19 @@ Quick chooser:
 - Recall asks: “Of all true positives, how many did I find?”
 - F1 balances precision and recall when you need one number.
 
+ASCII confusion matrix (positive = 1, negative = 0):
+```
+               Pred 1    Pred 0
+Actual 1        TP        FN
+Actual 0        FP        TN
+```
+
+Beginner mode: Precision, Recall, F1 — super simple
+- Precision = when I say “positive,” how often am I right? (TP/(TP+FP))
+- Recall = of all the real positives, how many did I catch? (TP/(TP+FN))
+- F1 = a single score that balances both. Good when classes are imbalanced.
+- Threshold trick: move threshold right → higher precision, lower recall; left → lower precision, higher recall.
+
 ### Responsible AI (Fairness, Transparency)
 - Fairness definitions: demographic parity, equal opportunity, equalized odds.
 - Bias sources: data, labels, proxies; mitigation: reweighing, constraints, post-processing.
@@ -363,6 +414,12 @@ When to pick:
 Intuition for p − y:
 - If the model assigns 0.9 to the true class (y=1), gradient = 0.9−1 = −0.1 → “lower the score a bit? no, raise others less.”
 - If it assigns 0.1 to the true class, gradient = 0.1−1 = −0.9 → “big push to raise the true class score.”
+
+Beginner mode: Backprop — super simple
+- Backprop answers: which weights caused the mistake, and by how much?
+- Linear layer y = W x + b, loss L: upstream gradient g = ∂L/∂y tells how sensitive loss is to y.
+- Then: ∂L/∂W = g x^T (weights connecting inputs to outputs get credit proportional to input and error), ∂L/∂b = g, ∂L/∂x = W^T g.
+- Intuition: if an input feature is big and the error is big, the connecting weight gets a bigger nudge.
 
 ### Optimization algorithms and schedules
 - SGD: θ ← θ − η ∇L
@@ -571,6 +628,20 @@ Quick numeric example:
 常见坑：
 - 把输入 x 和输出 y 搞反，应是 ŷ = w·x + b。
 - 忘了“平方”，导致正负误差互相抵消。
+
+新手模式：回归与 MSE — 超简单版
+- 目标：画一条能最好地用 x 预测 y 的直线。
+- 单点误差 = 真实 − 预测；平方让“大错”更疼。
+- MSE = 所有平方误差的平均，越小越好。
+
+1 分钟练习：
+- 数据 (x,y)=(1,2),(2,3)，若直线 ŷ = x + 0。
+- 预测 [1,2] → 误差 [1,1] → 平方 [1,1] → MSE=1。
+- 上移 1：ŷ = x + 1 → 预测 [2,3] → 误差 [0,0] → MSE=0（此玩具例完美）。
+
+注意：
+- 量纲重要（米/美元等），必要时做特征缩放。
+- 异常值会“主宰”MSE，必要时考虑 MAE/Huber。
 
 <a id="gradient-descent"></a>
 #### 梯度下降
