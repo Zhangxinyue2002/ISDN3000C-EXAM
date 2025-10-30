@@ -136,19 +136,48 @@ Assumptions: Slides aren’t text-extractable from PDFs, so this guide covers th
 - Adaptive systems that take rational actions based on observations; agents choose actions to maximize expected utility.
 - Framing prediction tasks: define features (inputs), model f(.), prediction ŷ, and target/label. Example: machine failure prediction using vibration, age, pressure, temperature.
 
+Easy idea: “See → Think → Act.” We observe numbers (features), use a recipe (model) to guess an answer (prediction), and compare to the truth (label).
+Remember 3 things:
+- Input = features you measure. Output = what you want to know.
+- A model is just a formula or flow of simple steps.
+- We judge a model by how small its errors are on known answers.
+
 #### Regression basics (MSE)
 - Linear model: y = m x + b (extendable to multiple features y = w·x + b).
 - Loss: Mean Squared Error (MSE) averages squared residuals to penalize large errors and avoid cancellation.
 
+In plain words:
+- Draw a straight line that best fits the dots. The “best” line makes squared vertical distances tiny.
+
+Mini example:
+- True y: [2, 3]; Pred y: [1, 4] → errors: [+1, −1]; squares: [1, 1]; MSE = (1+1)/2 = 1.
+
+Common mistakes:
+- Mixing up x and y (input vs prediction). Use ŷ = w·x + b.
+- Forgetting to square errors (then + and − cancel out).
+
 #### Gradient Descent
 - Iterative optimization: step opposite the gradient to reduce loss; key hyperparameter is learning rate α (too big overshoots; too small is slow).
 - Extends naturally to multiple features (higher-dimensional parameter space).
+
+Analogy: You’re on a foggy hill. You feel the steepest downward direction and take a small step. Repeat until flat.
+Quick rules:
+- If loss jumps up and down wildly → step size is too big (reduce α).
+- If loss crawls slowly → α too small (increase a bit).
 
 #### Classification with white-box models
 - Sigmoid maps scores to [0,1]; Logistic Regression = linear score + sigmoid for probabilistic classification.
 - Decision Trees learn IF/ELSE splits greedily to maximize purity of child nodes.
   - Impurity metrics: Entropy, Gini; Information Gain = impurity(parent) − weighted impurities(children).
   - Training: for each feature and split point, evaluate resulting purity; choose best split; recurse; pros: interpretable; cons: can overfit/high variance.
+
+Explain like I’m new:
+- Logistic regression: add up weighted features → squeeze with sigmoid to get a probability between 0 and 1.
+- Decision tree: it asks yes/no questions (like 20 Questions) to split the data until each group is mostly one label.
+
+Tiny IG example:
+- Parent impurity = 0.8; after split, children impurities = 0.5 (weight 0.6) and 0.2 (weight 0.4).
+- Weighted child = 0.6×0.5 + 0.4×0.2 = 0.3 + 0.08 = 0.38; IG = 0.8 − 0.38 = 0.42 (good).
 
 Anchors: [Regression](#regression-basics-mse) • [Gradient Descent](#gradient-descent) • [Logistic Regression](#logistic-regression) • [Decision Trees](#decision-trees-id3c45-basics)
 
@@ -162,14 +191,48 @@ Anchors: [Regression](#regression-basics-mse) • [Gradient Descent](#gradient-d
 - Perceptron is a linear classifier: z = w·x + b; only solves linearly separable problems.
 - XOR requires non-linear decision boundaries → introduce non-linear activations (e.g., ReLU) and multiple layers.
 
+Quick intuition:
+- One straight line can’t separate an “XOR” pattern. Stack layers + use bends (nonlinear activations) so the boundary can curve.
+
 #### MLP structure and training
 - Layers: input → hidden (learn intermediate representations) → output.
 - Universal Approximation: with at least one hidden layer + nonlinearity, MLP can approximate any continuous function.
 - Training loop: forward pass → loss → backpropagation (compute gradients) → optimizer step (update weights).
 
+Backprop (no calculus needed):
+- Ask “who caused the error?” and “by how much?”. Pull error backwards layer by layer, and nudge each weight in the helpful direction.
+
+Sanity check ritual:
+- Overfit a tiny batch (like 8 samples). If loss can’t go near zero, there’s a bug (shapes, LR, activation/loss mismatch).
+
 #### CNN convolution basics
 - Motivation: MLPs on images destroy spatial structure and explode parameters; CNNs leverage locality and weight sharing.
 - Convolution: slide small kernels/filters over the image to produce feature maps; filters learn to detect edges, textures, etc.
+
+Tiny 3×3 filter example:
+- Input patch (3×3) · Filter (3×3) → multiply-and-sum 9 numbers → one output pixel.
+- Slide the filter by 1 pixel → repeat. One filter = one feature map.
+
+Why it helps:
+- Same filter (shared weights) finds the same pattern anywhere → fewer parameters, stronger generalization.
+
+ASCII slide-and-sum (2×2 filter on 4×4 input, stride 1):
+
+```
+Input (4x4)                Filter (2x2)
++--+--+--+--+              +--+--+
+| 1| 2| 3| 4|              | a| b|
++--+--+--+--+              +--+--+
+| 5| 6| 7| 8|      with    | c| d|
++--+--+--+--+              +--+--+
+| 9|10|11|12|
++--+--+--+--+
+|13|14|15|16|
++--+--+--+--+
+
+First output (top-left): 1*a + 2*b + 5*c + 6*d
+Slide right by 1 → use (2,3,6,7) → next output, etc.
+```
 
 Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-perceptron-and-mlp) • [Backprop](#backpropagation-essentials) • [CNN](#cnn-basics)
 
@@ -197,6 +260,28 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - Stopping/pruning: Min samples per leaf, max depth, post-pruning to avoid overfit.
 - Interpretability: Path from root→leaf is a human-readable rule.
 
+If you only remember 3 things:
+1) Trees pick splits that make groups purer.
+2) Too deep trees memorize noise → prune or limit depth.
+3) Path = IF…THEN… rule you can explain to a non-technical person.
+
+ASCII sketch (tiny example):
+
+```
+            +-----------+
+            | Outlook?  |
+            +-----------+
+              /       \
+           Sunny      Rain
+            /           \
+     +-----------+    +----------+
+     | Humidity? |    | Windy?   |
+     +-----------+    +----------+
+       /      \         /     \
+    High     Low     False    True
+     No       Yes      Yes      No
+```
+
 #### Entropy and Information Gain
 - Entropy: H(Y) = − Σ p(y) log2 p(y)
 - Conditional Entropy: H(Y|X) = Σ p(x) H(Y|X=x)
@@ -221,11 +306,22 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
   - Counterfactuals: Minimal changes to features to flip the prediction.
 - Caveats: Correlated features can mislead; distribution shift invalidates explanations; ensure faithfulness and stability.
 
+Quick chooser:
+- Want a fast global feel? → Permutation importance, PDP.
+- Per-instance “why this prediction?” → LIME (fast), SHAP (more faithful but slower).
+- Need actionable change? → Counterfactuals (smallest tweak to flip the result).
+
 ### Classification metrics and curves
 - Confusion matrix: TP, FP, TN, FN.
 - Accuracy = (TP+TN)/(All) — misleading on imbalanced data.
 - Precision = TP/(TP+FP); Recall = TP/(TP+FN); F1 = 2PR/(P+R).
 - ROC-AUC: rank-based; PR-AUC more informative with class imbalance.
+
+1-minute metrics map:
+- Accuracy lies when one class dominates (e.g., 99% negatives).
+- Precision asks: “Of my positives, how many were correct?”
+- Recall asks: “Of all true positives, how many did I find?”
+- F1 balances precision and recall when you need one number.
 
 ### Responsible AI (Fairness, Transparency)
 - Fairness definitions: demographic parity, equal opportunity, equalized odds.
@@ -249,6 +345,10 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - ReLU: max(0, z); non-saturating; dead ReLUs possible.
 - LeakyReLU/ELU/GELU: mitigate dead units, improve gradients.
 
+When to pick:
+- Try ReLU first. If many dead neurons or unstable grads, try LeakyReLU or GELU.
+- For RNNs, tanh/sigmoid often appear inside gates (not for deep stacks).
+
 ### Loss functions (quick view)
 - Regression: MSE, MAE, Huber.
 - Binary classification: BCE (log loss).
@@ -260,12 +360,20 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
   - ∂L/∂W = g x^T; ∂L/∂x = W^T g; ∂L/∂b = g (sum over batch).
 - Softmax + CE simplifies to p − y (for one-hot y) at output.
 
+Intuition for p − y:
+- If the model assigns 0.9 to the true class (y=1), gradient = 0.9−1 = −0.1 → “lower the score a bit? no, raise others less.”
+- If it assigns 0.1 to the true class, gradient = 0.1−1 = −0.9 → “big push to raise the true class score.”
+
 ### Optimization algorithms and schedules
 - SGD: θ ← θ − η ∇L
 - Momentum: v ← βv + (1−β)∇L; θ ← θ − η v
 - RMSProp: adaptive per-parameter step via EMA of squared grads.
 - Adam: m,v EMAs with bias correction; popular default.
 - Schedules: step/plateau decay, cosine, warmup; tune learning rate carefully.
+
+Quick starter pack:
+- Adam with LR 1e−3 (classification) or 1e−4~1e−3 (vision) is a safe first try.
+- If loss plateaus, reduce LR on plateau or try cosine decay with warmup.
 
 ### Regularization and generalization
 - L2 (weight decay): adds λ||w||^2; shrinks weights.
@@ -274,6 +382,10 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - Early stopping: monitor val metric to stop before overfit.
 - BatchNorm: stabilize/accelerate training, mild regularizer.
 - Data augmentation: flips/crops/noise; mixup/cutmix (vision).
+
+Common overfitting smell tests:
+- Training loss ↓, validation loss ↑ → you’re overfitting.
+- Fixes: more data, stronger augmentation, more regularization (L2/Dropout), earlier stop, simpler model.
 
 ### CNN basics
 - Convolution: local receptive fields and shared weights.
@@ -310,6 +422,8 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - Feature X creates subsets with entropies 0.811 and 0.0 with weights 2/3 and 1/3 → H(Y|X)=0.541.
 - IG(Y,X)=0.971−0.541=0.430.
 
+Tip: Memorize “parent minus weighted children.” If IG is big, the question (split) is useful.
+
 3) Why are decision trees considered white-box? Pros/cons vs neural nets.
 - Paths are readable rules; easy to justify. Pros: transparency, handling of mixed types, little prep. Cons: high variance, axis-aligned splits, less accurate than ensembles/NNs on complex patterns.
 
@@ -327,6 +441,9 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 
 7) Given a confusion matrix, compute Precision, Recall, F1.
 - P=TP/(TP+FP); R=TP/(TP+FN); F1=2PR/(P+R). Include a quick numeric example if asked.
+
+Quick numeric example:
+- TP=8, FP=2, FN=4 → P=8/10=0.8, R=8/12≈0.667, F1≈2*0.8*0.667/(0.8+0.667)≈0.727.
 
 8) Compare L2 regularization and dropout.
 - L2: shrinks weights uniformly; keeps all features; smooths loss landscape.
@@ -434,15 +551,36 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - 自适应系统：基于观测做出理性行动；智能体以最大化期望效用为目标。
 - 预测任务要素：特征（输入）、模型 f(.)、预测值 ŷ、真实标签（Target）。示例：用振动、年龄、压力、温度预测机器是否故障。
 
+一句话理解：“看 → 想 → 做”。我们先观测到数字（特征），用一个“配方/步骤”（模型）算出答案（预测），再和真实答案对比（标签）。
+记住三点：
+- 输入是你量到的东西；输出是你想知道的结果。
+- 模型就是一串公式/小步骤的组合。
+- 好模型=在有答案的数据上，误差尽量小。
+
 <a id="regression-basics-mse"></a>
 #### 回归基础（MSE）
 - 线性模型：y = m x + b；多特征形式 y = w·x + b。
 - 损失：均方误差 MSE，平均平方残差，避免正负抵消并加大大误差惩罚。
 
+大白话：
+- 画一条最贴近点的直线。好的直线=每个点到线的“竖直距离”的平方尽量小。
+
+迷你例子：
+- 真实 y: [2,3]；预测 y: [1,4] → 误差: [+1, −1]；平方: [1,1]；MSE = (1+1)/2 = 1。
+
+常见坑：
+- 把输入 x 和输出 y 搞反，应是 ŷ = w·x + b。
+- 忘了“平方”，导致正负误差互相抵消。
+
 <a id="gradient-descent"></a>
 #### 梯度下降
 - 迭代优化：按负梯度方向更新以降低损失；关键超参为学习率 α（过大易越过最小值，过小收敛慢）。
 - 多特征情形对应更高维参数空间，同理可行。
+
+类比：大雾中下山，你摸到最陡的下坡方向，小步走下去，反复直到地势变平。
+小建议：
+- 损失忽上忽下=步子太大（减小学习率）。
+- 损失很慢才降=步子太小（稍微增大学习率）。
 
 <a id="logistic-regression"></a>
 #### 白盒分类（逻辑回归、决策树）
@@ -450,6 +588,14 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - 决策树通过贪心选择使子节点“更纯”的划分：
   - 不纯度度量：熵、Gini；信息增益 = 父不纯度 − 子不纯度加权和。
   - 训练：枚举特征与切分点，评估纯度并选择最佳划分，递归构建；优点可解释，缺点易过拟合/高方差。
+
+  超直白：
+  - 逻辑回归：把特征加权求和，再用 Sigmoid 把结果压到 0~1 之间，当作“概率”。
+  - 决策树：不断问“是/否”的问题，把数据分成越来越“单一”的小堆。
+
+  极简 IG 算法题：
+  - 父不纯度=0.8；切分后两个子集不纯度=0.5（权重0.6）和0.2（权重0.4）。
+  - 子集加权=0.6×0.5+0.4×0.2=0.38；信息增益 IG=0.8−0.38=0.42（不错）。
 
 锚点： [回归](#regression-basics-mse) • [梯度下降](#gradient-descent) • [逻辑回归](#logistic-regression) • [决策树](#decision-trees-id3c45-basics)
 
@@ -464,16 +610,50 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - 感知器是线性分类器：z = w·x + b，仅能解决线性可分问题。
 - XOR 需要非线性边界 → 引入非线性激活（如 ReLU）与多层结构。
 
+直觉版：
+- 一条直线分不开“异或”这种交错点阵。多加几层+用“弯曲”的激活函数，边界就能弯起来。
+
 <a id="neural-net-basics-perceptron-and-mlp"></a>
 #### MLP 结构与训练
 - 结构：输入层 → 隐藏层（学中间表示）→ 输出层。
 - 通用逼近：至少一层隐藏层 + 非线性，MLP 可逼近任意连续函数。
 - 训练流程：前向传播 → 计算损失 → 反向传播（求梯度）→ 优化器更新权重。
 
+不要微积分也能懂的反传：
+- 问“是谁导致了误差”和“导致了多少”。把“锅”一层层往前传，每个权重朝改进方向挪一点点。
+
+排错小流程：
+- 先在极小 batch（如 8 条）上“过拟合”。过不去=90% 是 shape、学习率、激活/损失不匹配的问题。
+
 <a id="cnn-basics"></a>
 #### CNN 卷积基础
 - 动机：MLP 处理图像会破坏空间结构且参数量暴涨；CNN 利用局部性与权值共享。
 - 卷积：小核/滤波器在图像上滑动生成特征图；滤波器学到边缘、纹理等局部模式。
+
+3×3 小例子：
+- 3×3 图像块 × 3×3 滤波器 → 9 个数相乘再相加，得到 1 个输出；把滤波器平移一格重复。
+- 一个滤波器就得到一张“特征图”。
+
+为什么好用：
+- 同一套参数到处找同样的模式，参数更少、更会举一反三。
+
+ASCII 滑窗相乘相加（2×2 卷积核扫 4×4 输入，步幅 1）：
+
+```
+输入 (4x4)                 卷积核 (2x2)
++--+--+--+--+              +--+--+
+| 1| 2| 3| 4|              | a| b|
++--+--+--+--+              +--+--+
+| 5| 6| 7| 8|      配合    | c| d|
++--+--+--+--+              +--+--+
+| 9|10|11|12|
++--+--+--+--+
+|13|14|15|16|
++--+--+--+--+
+
+第一个输出(左上)：1*a + 2*b + 5*c + 6*d
+向右平移 1 格 → 用 (2,3,6,7) 计算下一个输出。
+```
 
 锚点： [感知器/XOR](#xor-and-activations) • [MLP](#neural-net-basics-perceptron-and-mlp) • [反向传播](#backpropagation-essentials) • [CNN](#cnn-basics)
 
@@ -505,6 +685,28 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - 停止/剪枝：最小叶样本、最大深度、后剪枝以防过拟合。
 - 可解释性：根→叶路径即人可读规则。
 
+三点速记：
+1) 选择让“纯度”上升最多的切分。
+2) 树太深容易背答案 → 限深/剪枝。
+3) 每条路径就是一句 IF…THEN… 的人话规则。
+
+ASCII 小图（极简示例）：
+
+```
+            +-----------+
+            | 天气?     |
+            +-----------+
+              /       \
+           晴天       雨天
+            /           \
+     +-----------+    +----------+
+     | 湿度高?   |    | 刮风?    |
+     +-----------+    +----------+
+       /      \         /     \
+     是      否        否      是
+     否      是        是      否
+```
+
 <a id="entropy-and-information-gain"></a>
 #### 熵与信息增益
 - 熵：H(Y) = − Σ p(y) log2 p(y)
@@ -532,12 +734,23 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
   - 反事实：最小特征改动即可翻转预测，需可行、可操作、稀疏。
 - 注意：强相关特征会误导；分布漂移会使解释失真；关注忠实度与稳定性。
 
+怎么选：
+- 看全局大势 → 置换重要性、PDP。
+- 看某条样本“为啥这么判” → LIME（快）、SHAP（更忠实但慢）。
+- 要“怎么改能翻盘” → 反事实（最小改动，翻预测）。
+
 <a id="classification-metrics-and-curves"></a>
 ### 分类指标与曲线
 - 混淆矩阵：TP、FP、TN、FN。
 - 准确率 Acc = (TP+TN)/All —— 类别极不平衡时误导性强。
 - 精确率 P = TP/(TP+FP)；召回率 R = TP/(TP+FN)；F1 = 2PR/(P+R)。
 - ROC-AUC：排序度量；PR-AUC 在正负极不平衡时更有信息量。
+
+一分钟地图：
+- 类别很不平衡时，Accuracy 经常骗人。
+- Precision：我判为正的里，有多少是真的？
+- Recall：所有真的正里，我抓住了多少？
+- F1：当你想要一个折中分数时用它。
 
 <a id="responsible-ai-fairness-transparency"></a>
 ### 负责任的 AI（公平与透明）
@@ -564,6 +777,10 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - ReLU：max(0,z)；不饱和但可能“神经元死亡”。
 - LeakyReLU/ELU/GELU：缓解死亡、改善梯度。
 
+怎么选：
+- 先用 ReLU。死神经元多或梯度乱 → 尝试 LeakyReLU/GELU。
+- RNN 的门里常见 sigmoid/tanh（不是拿来堆很深的）。
+
 <a id="loss-functions-quick-view"></a>
 ### 损失函数（速览）
 - 回归：MSE、MAE、Huber。
@@ -577,6 +794,10 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
   - ∂L/∂W = g x^T；∂L/∂x = W^T g；∂L/∂b = g（对批求和）。
 - Softmax + CE 输出梯度简化为 p − y（y 为 one-hot）。
 
+理解 p − y：
+- 真实类给了 0.9（y=1）→ 梯度=0.9−1=−0.1：只需小修小补。
+- 真实类给了 0.1 → 梯度=0.1−1=−0.9：需要大力把真实类分数推高。
+
 <a id="optimization-algorithms-and-schedules"></a>
 ### 优化算法与学习率日程
 - SGD：θ ← θ − η ∇L
@@ -584,6 +805,10 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - RMSProp：按参数自适应步长，跟踪平方梯度 EMA。
 - Adam：一阶/二阶矩 EMA + 偏差校正；常用默认。
 - 学习率策略：阶梯/平台衰减、余弦、预热；学习率需精心调优。
+
+开箱即用组合：
+- Adam + LR≈1e−3（分类）通常能跑起来；视觉任务 1e−4~1e−3 常见。
+- 卡住不降 → 降 LR（平台衰减）或用余弦退火 + 预热。
 
 <a id="regularization-and-generalization"></a>
 ### 正则化与泛化
@@ -593,6 +818,10 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - 早停：监控验证集指标提前停止防过拟合。
 - BatchNorm：稳定/加速训练，兼具轻微正则效果。
 - 数据增强：翻转/裁剪/噪声；视觉中有 mixup/cutmix。
+
+过拟合小体征：
+- 训练降、验证升 → 过拟合。
+- 解法：更多数据、更强增强、更强正则（L2/Dropout）、更早停、更小模型。
 
 ### CNN 基础
 - 卷积：局部感受野与权值共享。
@@ -632,6 +861,8 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 - 特征 X 将数据分为权重 2/3 与 1/3 的两组，其熵分别 0.811 与 0.0 → H(Y|X)=0.541。
 - IG(Y,X)=0.971−0.541=0.430。
 
+小提示：背下“父不纯度 − 子不纯度加权和”。IG 大=问题问得好。
+
 3）为何决策树被视为白盒？与神经网络的利弊对比。
 - 根到叶的路径即规则，易解释。优点：透明、可处理混合类型、预处理少。缺点：高方差、轴对齐划分、在复杂模式上准确率不如集成/NN。
 
@@ -649,6 +880,9 @@ Anchors: [Perceptron/XOR](#xor-and-activations) • [MLP](#neural-net-basics-per
 
 7）给定混淆矩阵，计算 P、R、F1。
 - P=TP/(TP+FP)；R=TP/(TP+FN)；F1=2PR/(P+R)。
+
+快速例子：
+- TP=8, FP=2, FN=4 → P=8/10=0.8，R=8/12≈0.667，F1≈0.727。
 
 8）对比 L2 正则与 Dropout。
 - L2：均匀收缩权重；保留全部特征；平滑损失地形。
